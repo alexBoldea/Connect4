@@ -3,16 +3,26 @@ Documented bugs: When making the choice of a column and the move is on the top l
                  the bottom piece of the column to the left, the bottom piece "disappears".
                  Steps to take:
                 1. check if the behavior is the same for both user and computer moves - so far only computer moves are
-                    confirmed to have this behavior
+                    confirmed to have this behavior ========= confirmed
+
                 2. check what is the moves_dict{} structure before and after this behavior by writing the contents to a
                     file after every move
-                    
-                 After a winner is found and the game is reset by pressing "space" the pieces disappear but the lists
-                 appear to be populated. Try a solution based on moves_dict to replace the lists col1 .. col7
+
+                    consecutive moves:
+                    17: (250, 650, <Surface(70x70x32 SW)>), 18: 0,
+                    17: (250, 650, <Surface(70x70x32 SW)>), 18: (350, 150, <Surface(70x70x32 SW)>),
+                    17: 0, 18: (350, 150, <Surface(70x70x32 SW)>), <<<=== 17 should not switch back to 0
+
+
+                === After a winner is found and the game is reset by pressing "space" the pieces disappear but the lists
+                === appear to be populated. Try a solution based on moves_dict to replace the lists col1 .. col7
+                === Solved by redefinition of reset_game() function
 """
 
 from random import choice
 import pygame
+
+f = open("log.txt", "a")
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -43,14 +53,6 @@ col1, col2, col3, col4, col5, col6, col7 = [], [], [], [], [], [], [] # will kee
 move_count = 0
 computer_moves = [(col1, 1), (col2, 2), (col3, 3), (col4, 4), (col5, 5), (col6, 6), (col7, 7)]
 
-# define classes
-# class Piece(pygame.sprite.Sprite):
-#     def __init__(self, pos_x, pos_y, color):
-#         super().__init__()
-#         self.image = color
-#         self.rect = self.image.get_rect()
-#         self.rect.center = [pos_x, pos_y]
-
 
 # Define the functions used
 def reset_game():
@@ -60,8 +62,14 @@ def reset_game():
     global running
     global col1, col2, col3, col4, col5, col6, col7
     move_count = 0
+    col1 *= 0
+    col2 *= 0
+    col3 *= 0
+    col4 *= 0
+    col5 *= 0
+    col6 *= 0
+    col7 *= 0
     running = True
-    col1, col2, col3, col4, col5, col6, col7 = [], [], [], [], [], [], []
 
 
 def set_piece(x, col):
@@ -131,6 +139,12 @@ def is_winner():
     return False
 
 
+def is_draw():
+    if len(col1) == len(col2) == len(col3) == len(col4) == len(col5) == len(col6) == len(col7) == 6:
+        return True
+    return False
+
+
 def player_score():
     """
     Should display on top of the window text related to Player 1 and Player 2,
@@ -195,27 +209,38 @@ def mouse_click(m):
     elif m[0] in range(605, 696) and m[1] in range(90, 696):
         set_piece(col7, 7)
 
+def moves_layout():
+    """
+    :return: A string of all the moves currently made on the board, taken from the moves_dict
+    """
+    return '\n\n' + str(moves_dict) + '\n\n' + str(col1) + '\n' + str(col2) + '\n' + str(col3) + '\n' + str(col4) + '\n' + str(col5) + '\n' + str(col6) + '\n' + str(col7) + '\n'
+
 
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            f.close()
             pygame.quit()
         # --- Game logic should go here
-        if not running:
+        if not running or is_draw():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     reset_game()
+
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and running:
             if not move_count % 2:
                 mouse = pygame.mouse.get_pos()  # returns tuple of coords x and y
                 mouse_click(mouse)
+                f.write(moves_layout())
                 if is_winner():
-                    print("winner!")
+                    f.write("Winner! \n")
                     running = False
+
         elif move_count >= 1 and move_count % 2 and running:
             comp_move()
+            f.write(moves_layout())
             if is_winner():
-                print("winner!")
+                f.write("Winner! \n")
                 running = False
     # --- Drawing code should go here
     screen.fill(WHITE)
@@ -237,4 +262,3 @@ while True:
 
     # --- Limit to 60 frames per second
     clock.tick(60)
-    
