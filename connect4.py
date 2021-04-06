@@ -3,7 +3,7 @@ Documented bugs: When making the choice of a column and the move is on the top l
                  the bottom piece of the column to the left, the bottom piece "disappears".
                  Steps to take:
                 1. check if the behavior is the same for both user and computer moves - so far only computer moves are
-                    confirmed to have this behavior ========= confirmed
+                    confirmed to have this behavior ========= error occurs only at comp_move()
 
                 2. check what is the moves_dict{} structure before and after this behavior by writing the contents to a
                     file after every move
@@ -13,7 +13,10 @@ Documented bugs: When making the choice of a column and the move is on the top l
                     17: (250, 650, <Surface(70x70x32 SW)>), 18: (350, 150, <Surface(70x70x32 SW)>),
                     17: 0, 18: (350, 150, <Surface(70x70x32 SW)>), <<<=== 17 should not switch back to 0
 
-
+                 After making a successful counter-move with the comp_move() function, another pair of moves is made 
+                 first red, then yellow.
+                 
+                 
                 === After a winner is found and the game is reset by pressing "space" the pieces disappear but the lists
                 === appear to be populated. Try a solution based on moves_dict to replace the lists col1 .. col7
                 === Solved by redefinition of reset_game() function
@@ -43,6 +46,7 @@ ARROWBLUE = (65, 65, 107)
 # Define images
 red = pygame.image.load("C:\\Users\\alex_\\MyPythonScripts\\Connect4\\red70px.png")
 yellow = pygame.image.load("C:\\Users\\alex_\\MyPythonScripts\\Connect4\\yellow70px.png")
+blue = pygame.image.load("C:\\Users\\alex_\\MyPythonScripts\\Connect4\\bluebar.png")
 
 # Define global scope variables
 moves_dict = {} # will keep track of what moves were made
@@ -80,15 +84,14 @@ def set_piece(x, col):
     will set color based on turn
     """
     global move_count
-    if len(x) >= 6:
-        return None
-    else:
+    if len(x) < 6:
         move_count += 1
         x.append(1)
         x_coord = col * 100 - 50
         y_coord = 750 - len(x) * 100
         color = red if move_count % 2 else yellow
-        # populate the moves_dict with key: value pairs such that key in range(0, 42) and values are tuples(x_coord, y_coord, color)
+        # populate the moves_dict with key: value pairs such that key in range(0, 42) and values are tuples(x_coord,
+        # y_coord, color)
         moves_dict[6*(col-1)+6-len(x)] = (x_coord, y_coord, color)
         # for i in moves_dict:
         #     print(i, moves_dict[i][0], moves_dict[i][1], moves_dict[i][2])
@@ -162,12 +165,12 @@ def comp_move():
     """
     # the loop below will check if computer can win in the next move
     pygame.time.wait(700)
+
     for i in computer_moves:
         moves_dict[6*(i[1]-1)+6-len(i[0])-1] = (0, 0, yellow)
         if is_winner():
             moves_dict[6 * (i[1] - 1) + 6 - len(i[0]) - 1] = 0
             set_piece(i[0], i[1])
-            return None
         else:
             moves_dict[6 * (i[1] - 1) + 6 - len(i[0])-1] = 0
 
@@ -177,7 +180,6 @@ def comp_move():
         if is_winner():
             moves_dict[6 * (i[1] - 1) + 6 - len(i[0]) - 1] = 0
             set_piece(i[0], i[1])
-            return None
         else:
             moves_dict[6 * (i[1] - 1) + 6 - len(i[0])-1] = 0
 
@@ -185,12 +187,7 @@ def comp_move():
     # as it's come to my attention there are over 4 trillion cases to consider, I will randomize the move
     else:
         i = choice(computer_moves)
-        while True:
-            if len(i[0]) < 6:
-                set_piece(i[0], i[1])
-                return None
-            else:
-                i = choice(computer_moves)
+        set_piece(i[0], i[1])
 
 
 def mouse_click(m):
@@ -213,7 +210,8 @@ def moves_layout():
     """
     :return: A string of all the moves currently made on the board, taken from the moves_dict
     """
-    return '\n\n' + str(moves_dict) + '\n\n' + str(col1) + '\n' + str(col2) + '\n' + str(col3) + '\n' + str(col4) + '\n' + str(col5) + '\n' + str(col6) + '\n' + str(col7) + '\n'
+    return '\n\n' + str(moves_dict) + '\n\n' + str(col1) + '\n' + str(col2) + '\n' + str(col3) + '\n' + str(col4) + \
+           '\n' + str(col5) + '\n' + str(col6) + '\n' + str(col7) + '\n'
 
 
 while True:
@@ -246,9 +244,13 @@ while True:
     screen.fill(WHITE)
 
     for i in range(1, 8):
-        pygame.draw.rect(screen, BACKGROUND, [(i - 1) * 100 + 5, 90, 90, 605], 0)
+        try:
+            screen.blit(blue, ((i - 1) * 100, 90))
+        except:
+            pygame.draw.rect(screen, BACKGROUND, [(i - 1) * 100 + 5, 90, 90, 605], 0)
         for j in range(2, 8):
-            pygame.draw.circle(screen, ARROWBLUE, (i * 100 - 50, j * 100 - 50), 40, 5)
+            pygame.draw.circle(screen, ARROWBLUE, (i * 100 - 50, j * 100 - 50), 37, 2)
+            pygame.draw.circle(screen, BACKGROUND, (i * 100 - 50, j * 100 - 50), 35)
 
     for i in moves_dict:
         try:
@@ -262,3 +264,4 @@ while True:
 
     # --- Limit to 60 frames per second
     clock.tick(60)
+
