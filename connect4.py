@@ -231,6 +231,7 @@ def moves_layout():
         for k in j:
             display += k
         display += '\n'
+    display += '\n ---------------------------- \n'
     return display
 
 
