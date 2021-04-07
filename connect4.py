@@ -1,24 +1,17 @@
 """
-Documented bugs: When calling comp_move(), if a column is full and the column to the left has one piece at the bottom, 
-                 that piece will disappear.
-                 Steps to take:
-                1. check if the behavior is the same for both user and computer moves - so far only computer moves are
-                    confirmed to have this behavior ========= error occurs only at comp_move()
-                2. check what is the moves_dict{} structure before and after this behavior by writing the contents to a
-                    file after every move
-                    consecutive moves:
-                    17: (250, 650, <Surface(70x70x32 SW)>), 18: 0,
-                    17: (250, 650, <Surface(70x70x32 SW)>), 18: (350, 150, <Surface(70x70x32 SW)>),
-                    17: 0, 18: (350, 150, <Surface(70x70x32 SW)>), <<<=== 17 should not switch back to 0
+Documented bugs: pygame.error: display Surface quit -> action was tried on the display surface after quit - should reorder the code
 
-                === After making a successful counter-move with the comp_move() function, another pair of moves is made 
-                === first red, then yellow. This is possibly related to no return statement on comp_move() -> should
-                === be fixed
+                 === When calling comp_move(), if a column is full and the column to the left has one piece at the bottom,
+                 === that piece will disappear.
+                 === Solved by reworking the comp_move() function
                  
-                 
-                === After a winner is found and the game is reset by pressing "space" the pieces disappear but the lists
-                === appear to be populated. Try a solution based on moves_dict to replace the lists col1 .. col7
-                === Solved by redefinition of reset_game() function
+                 === After making a successful counter-move with the comp_move() function, another pair of moves is made
+                 === first red, then yellow. This is possibly related to no return statement on comp_move() -> should
+                 === be fixed
+
+                 === After a winner is found and the game is reset by pressing "space" the pieces disappear but the lists
+                 === appear to be populated. Try a solution based on moves_dict to replace the lists col1 .. col7
+                 === Solved by redefinition of reset_game() function
 """
 
 from random import choice
@@ -92,7 +85,7 @@ def set_piece(x, col):
         # populate the moves_dict with key: value pairs such that key in range(0, 42) and values are tuples(x_coord,
         # y_coord, color)
         moves_dict[6*(col-1)+6-len(x)] = (x_coord, y_coord, color)
-        f.write(moves_dict[6*(col-1)+6-len(x)] + '\n')
+        # f.write(moves_dict[6*(col-1)+6-len(x)] + '\n')
         # for i in moves_dict:
         #     print(i, moves_dict[i][0], moves_dict[i][1], moves_dict[i][2])
 
@@ -173,7 +166,7 @@ def comp_move():
                                                               # -1 takes the values 0 to 6 inclusive
                                                               # )*6 times 6 takes the values 0, 6, ... 36
                                                               # +6 takes the values 6, 12, ... 42
-                                                              # -len(i[0]) takes the value of the length of i[0] (can be 0 to 6) 
+                                                              # -len(i[0]) takes the value of the length of i[0] (can be 0 to 6)
 
                                                               # this needs to be checked, if the column is already full( len = 6)
                                                               # then the move is invalid and i should be skipped
@@ -224,7 +217,7 @@ def moves_layout():
     This is used strictly for writing the info in the log file for debugging
     """
     moves_matrix = [[], [], [], [], [], []]
-    for i in moves_dict.keys().sort():
+    for i in range(42):
         moves_matrix[i % 6].append(" 0 " if moves_dict[i] == 0 else " X ")
     display = ""
     for j in moves_matrix:
@@ -236,6 +229,7 @@ def moves_layout():
 
 
 while True:
+    f = open("log.txt", "a")
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             f.close()
@@ -278,7 +272,6 @@ while True:
         try:
             screen.blit(moves_dict[i][2], (moves_dict[i][0]-35, moves_dict[i][1]-35))
         except:
-            f.write("Failed in displaying a disk")
             continue
 
 
@@ -287,3 +280,4 @@ while True:
 
     # --- Limit to 60 frames per second
     clock.tick(60)
+    f.close()
