@@ -1,6 +1,6 @@
 """
-Documented bugs: When making the choice of a column and the move is on the top line, if the piece is of the same color as
-                 the bottom piece of the column to the left, the bottom piece "disappears".
+Documented bugs: When calling comp_move(), if a column is full and the column to the left has one piece at the bottom, 
+                 that piece will disappear.
                  Steps to take:
                 1. check if the behavior is the same for both user and computer moves - so far only computer moves are
                     confirmed to have this behavior ========= error occurs only at comp_move()
@@ -92,6 +92,7 @@ def set_piece(x, col):
         # populate the moves_dict with key: value pairs such that key in range(0, 42) and values are tuples(x_coord,
         # y_coord, color)
         moves_dict[6*(col-1)+6-len(x)] = (x_coord, y_coord, color)
+        f.write(moves_dict[6*(col-1)+6-len(x)] + '\n')
         # for i in moves_dict:
         #     print(i, moves_dict[i][0], moves_dict[i][1], moves_dict[i][2])
 
@@ -165,30 +166,39 @@ def comp_move():
     # the loop below will check if computer can win in the next move
     pygame.time.wait(700)
 
-    for i in computer_moves:
-        moves_dict[6*(i[1]-1)+6-len(i[0])-1] = (0, 0, yellow)
-        if is_winner():
-            moves_dict[6 * (i[1] - 1) + 6 - len(i[0]) - 1] = 0
-            set_piece(i[0], i[1])
-            return True
-        else:
-            moves_dict[6 * (i[1] - 1) + 6 - len(i[0])-1] = 0
+    for i in computer_moves: # this will pass through the 7 possible moves
+        if len(i[0]) > 5:       # this condition should fix the "disappearing piece" bug
+            continue
+        if moves_dict[(i[1]-1)*6 + 6 - len(i[0]) - 1] == 0:   # (i[1] takes the values 1 to 7 inclusive
+                                                              # -1 takes the values 0 to 6 inclusive
+                                                              # )*6 times 6 takes the values 0, 6, ... 36
+                                                              # +6 takes the values 6, 12, ... 42
+                                                              # -len(i[0]) takes the value of the length of i[0] (can be 0 to 6) 
 
-    # the loop below will check if opponent can win in the next move and block him
-    for i in computer_moves:
-        moves_dict[6*(i[1]-1)+6-len(i[0])-1] = (0, 0, red)
-        if is_winner():
-            moves_dict[6 * (i[1] - 1) + 6 - len(i[0]) - 1] = 0
-            set_piece(i[0], i[1])
-            return True
-        else:
-            moves_dict[6 * (i[1] - 1) + 6 - len(i[0])-1] = 0
+                                                              # this needs to be checked, if the column is already full( len = 6)
+                                                              # then the move is invalid and i should be skipped
 
-    # the loop below will compute the best move for the current position:
+                                                              # -1] to be able to start from the bottom (e.g. position 5)
+
+            moves_dict[6*(i[1]-1)+6-len(i[0])-1] = (0, 0, yellow) # checks for computer win possibility
+            if is_winner():
+                set_piece(i[0], i[1])
+                return True
+            else:
+                moves_dict[6*(i[1]-1)+6-len(i[0])-1] = (0, 0, red) # checks for user win and blocks it
+                if is_winner():
+                    set_piece(i[0], i[1])
+                    return True
+                else:
+                    moves_dict[6 * (i[1] - 1) + 6 - len(i[0])-1] = 0
+
+    # the code below will compute the best move for the current position:
     # as it's come to my attention there are over 4 trillion cases to consider, I will randomize the move
     else:
-        i = choice(computer_moves)
-        set_piece(i[0], i[1])
+        j = choice(computer_moves)
+        while len(j[0]) > 5:
+            j = choice(computer_moves) # this ensures the function set_piece() is called for a valid move
+        set_piece(j[0], j[1])
         return True
 
 
@@ -213,8 +223,15 @@ def moves_layout():
     :return: A string of all the moves currently made on the board, taken from the moves_dict
     This is used strictly for writing the info in the log file for debugging
     """
-    return '\n' + str(moves_dict) + '\n\n' + str(col1) + '\n' + str(col2) + '\n' + str(col3) + '\n' + str(col4) + \
-           '\n' + str(col5) + '\n' + str(col6) + '\n' + str(col7) + '\n'
+    moves_matrix = [[], [], [], [], [], []]
+    for i in moves_dict.keys().sort():
+        moves_matrix[i % 6].append(" 0 " if moves_dict[i] == 0 else " X ")
+    display = ""
+    for j in moves_matrix:
+        for k in j:
+            display += k
+        display += '\n'
+    return display
 
 
 while True:
