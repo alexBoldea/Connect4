@@ -1,19 +1,25 @@
 """
-Documented bugs: pygame.error: display Surface quit -> action was tried on the display surface after quit - should reorder the code
+Documented bugs: When calling comp_move(), if a column is full and the column to the left has one piece at the bottom,
+                 that piece will disappear.
+                 Steps to take:
+                1. check if the behavior is the same for both user and computer moves - so far only computer moves are
+                    confirmed to have this behavior ========= error occurs only at comp_move()
+                2. check what is the moves_dict{} structure before and after this behavior by writing the contents to a
+                    file after every move
+                    consecutive moves:
+                    17: (250, 650, <Surface(70x70x32 SW)>), 18: 0,
+                    17: (250, 650, <Surface(70x70x32 SW)>), 18: (350, 150, <Surface(70x70x32 SW)>),
+                    17: 0, 18: (350, 150, <Surface(70x70x32 SW)>), <<<=== 17 should not switch back to 0
+                === After making a successful counter-move with the comp_move() function, another pair of moves is made
+                === first red, then yellow. This is possibly related to no return statement on comp_move() -> should
+                === be fixed
 
-                 === When calling comp_move(), if a column is full and the column to the left has one piece at the bottom,
-                 === that piece will disappear.
-                 === Solved by reworking the comp_move() function
-                 
-                 === After making a successful counter-move with the comp_move() function, another pair of moves is made
-                 === first red, then yellow. This is possibly related to no return statement on comp_move() -> should
-                 === be fixed
 
-                 === After a winner is found and the game is reset by pressing "space" the pieces disappear but the lists
-                 === appear to be populated. Try a solution based on moves_dict to replace the lists col1 .. col7
-                 === Solved by redefinition of reset_game() function
+                === After a winner is found and the game is reset by pressing "space" the pieces disappear but the lists
+                === appear to be populated. Try a solution based on moves_dict to replace the lists col1 .. col7
+                === Solved by redefinition of reset_game() function
 """
-
+import sys, os
 from random import choice
 import pygame
 
@@ -24,6 +30,10 @@ clock = pygame.time.Clock()
 # window:
 size = (700, 700)
 screen = pygame.display.set_mode(size)
+
+game_font = pygame.font.Font('04B_19.TTF',32)
+text = game_font.render("PLAYER 1: 0      Evil Computer: 0", True, (240, 87, 22))
+score_rect = text.get_rect(center = (350, 40))
 pygame.display.set_caption("Connect 4")
 running = True
 
@@ -228,12 +238,18 @@ def moves_layout():
     return display
 
 
+def quit_game():
+    pygame.quit()
+
+
 while True:
     f = open("log.txt", "a")
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             f.close()
             pygame.quit()
+            sys.exit()
         # --- Game logic should go here
         if not running or is_draw():
             if event.type == pygame.KEYDOWN:
@@ -257,7 +273,6 @@ while True:
                 running = False
     # --- Drawing code should go here
     screen.fill(WHITE)
-
     for i in range(1, 8):
         try:
             screen.blit(blue, ((i - 1) * 100, 90))
@@ -273,7 +288,7 @@ while True:
             screen.blit(moves_dict[i][2], (moves_dict[i][0]-35, moves_dict[i][1]-35))
         except:
             continue
-
+    screen.blit(text, score_rect)
 
     # --- Update the screen
     pygame.display.flip()
