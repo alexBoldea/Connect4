@@ -4,17 +4,16 @@ Documented bugs: When making the choice of a column and the move is on the top l
                  Steps to take:
                 1. check if the behavior is the same for both user and computer moves - so far only computer moves are
                     confirmed to have this behavior ========= error occurs only at comp_move()
-
                 2. check what is the moves_dict{} structure before and after this behavior by writing the contents to a
                     file after every move
-
                     consecutive moves:
                     17: (250, 650, <Surface(70x70x32 SW)>), 18: 0,
                     17: (250, 650, <Surface(70x70x32 SW)>), 18: (350, 150, <Surface(70x70x32 SW)>),
                     17: 0, 18: (350, 150, <Surface(70x70x32 SW)>), <<<=== 17 should not switch back to 0
 
-                 After making a successful counter-move with the comp_move() function, another pair of moves is made 
-                 first red, then yellow.
+                === After making a successful counter-move with the comp_move() function, another pair of moves is made 
+                === first red, then yellow. This is possibly related to no return statement on comp_move() -> should
+                === be fixed
                  
                  
                 === After a winner is found and the game is reset by pressing "space" the pieces disappear but the lists
@@ -161,7 +160,7 @@ def comp_move():
     Else check if opponent is 1 move away from win and block
     Else compute the most favorable move for a chance of winning
     :return: - None
-    Should call set_piece() with the move decided
+    Should call set_piece() with the move decided and then break out of the function
     """
     # the loop below will check if computer can win in the next move
     pygame.time.wait(700)
@@ -171,6 +170,7 @@ def comp_move():
         if is_winner():
             moves_dict[6 * (i[1] - 1) + 6 - len(i[0]) - 1] = 0
             set_piece(i[0], i[1])
+            return True
         else:
             moves_dict[6 * (i[1] - 1) + 6 - len(i[0])-1] = 0
 
@@ -180,6 +180,7 @@ def comp_move():
         if is_winner():
             moves_dict[6 * (i[1] - 1) + 6 - len(i[0]) - 1] = 0
             set_piece(i[0], i[1])
+            return True
         else:
             moves_dict[6 * (i[1] - 1) + 6 - len(i[0])-1] = 0
 
@@ -188,6 +189,7 @@ def comp_move():
     else:
         i = choice(computer_moves)
         set_piece(i[0], i[1])
+        return True
 
 
 def mouse_click(m):
@@ -209,8 +211,9 @@ def mouse_click(m):
 def moves_layout():
     """
     :return: A string of all the moves currently made on the board, taken from the moves_dict
+    This is used strictly for writing the info in the log file for debugging
     """
-    return '\n\n' + str(moves_dict) + '\n\n' + str(col1) + '\n' + str(col2) + '\n' + str(col3) + '\n' + str(col4) + \
+    return '\n' + str(moves_dict) + '\n\n' + str(col1) + '\n' + str(col2) + '\n' + str(col3) + '\n' + str(col4) + \
            '\n' + str(col5) + '\n' + str(col6) + '\n' + str(col7) + '\n'
 
 
@@ -235,8 +238,8 @@ while True:
                     running = False
 
         elif move_count >= 1 and move_count % 2 and running:
-            comp_move()
-            f.write(moves_layout())
+            if comp_move():
+                f.write("Computer move: \n" + moves_layout())
             if is_winner():
                 f.write("Winner! \n")
                 running = False
@@ -247,6 +250,7 @@ while True:
         try:
             screen.blit(blue, ((i - 1) * 100, 90))
         except:
+            f.write("Failed in displaying blue bar")
             pygame.draw.rect(screen, BACKGROUND, [(i - 1) * 100 + 5, 90, 90, 605], 0)
         for j in range(2, 8):
             pygame.draw.circle(screen, ARROWBLUE, (i * 100 - 50, j * 100 - 50), 37, 2)
@@ -255,7 +259,8 @@ while True:
     for i in moves_dict:
         try:
             screen.blit(moves_dict[i][2], (moves_dict[i][0]-35, moves_dict[i][1]-35))
-        except TypeError:
+        except:
+            f.write("Failed in displaying a disk")
             continue
 
 
@@ -264,4 +269,3 @@ while True:
 
     # --- Limit to 60 frames per second
     clock.tick(60)
-
