@@ -40,10 +40,21 @@ BACKGROUND = (172, 204, 227)
 WHITE = (200, 200, 200)
 ARROWBLUE = (65, 65, 107)
 
+def resource_path(relative_path):
+    try:
+    # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 # Define images
-red = pygame.image.load("C:\\Users\\alex_\\MyPythonScripts\\Connect4\\red70px.png")
-yellow = pygame.image.load("C:\\Users\\alex_\\MyPythonScripts\\Connect4\\yellow70px.png")
-blue = pygame.image.load("C:\\Users\\alex_\\MyPythonScripts\\Connect4\\bluebar.png")
+red_url = resource_path("red70px.png")
+red = pygame.image.load(red_url)
+yellow_url = resource_path("yellow70px.png")
+yellow = pygame.image.load(yellow_url)
+blue_url = resource_path("bluebar.png")
+blue = pygame.image.load(blue_url)
 
 # Define global scope variables
 moves_dict = {} # will keep track of what moves were made
