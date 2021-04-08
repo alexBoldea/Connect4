@@ -1,23 +1,16 @@
 """
-Documented bugs: When calling comp_move(), if a column is full and the column to the left has one piece at the bottom,
+Documented bugs: === FIXED ===
+                 When calling comp_move(), if a column is full and the column to the left has one piece at the bottom,
                  that piece will disappear.
-                 Steps to take:
-                1. check if the behavior is the same for both user and computer moves - so far only computer moves are
-                    confirmed to have this behavior ========= error occurs only at comp_move()
-                2. check what is the moves_dict{} structure before and after this behavior by writing the contents to a
-                    file after every move
-                    consecutive moves:
-                    17: (250, 650, <Surface(70x70x32 SW)>), 18: 0,
-                    17: (250, 650, <Surface(70x70x32 SW)>), 18: (350, 150, <Surface(70x70x32 SW)>),
-                    17: 0, 18: (350, 150, <Surface(70x70x32 SW)>), <<<=== 17 should not switch back to 0
-                === After making a successful counter-move with the comp_move() function, another pair of moves is made
-                === first red, then yellow. This is possibly related to no return statement on comp_move() -> should
-                === be fixed
 
+                 === FIXED ===
+                 After making a successful counter-move with the comp_move() function, another pair of moves is made
+                 first red, then yellow. This is possibly related to no return statement on comp_move()
 
-                === After a winner is found and the game is reset by pressing "space" the pieces disappear but the lists
-                === appear to be populated. Try a solution based on moves_dict to replace the lists col1 .. col7
-                === Solved by redefinition of reset_game() function
+                 === FIXED ===
+                 After a winner is found and the game is reset by pressing "space" the pieces disappear but the lists
+                 appear to be populated. Try a solution based on moves_dict to replace the lists col1 .. col7
+                 Solved by redefinition of reset_game() function
 """
 import sys, os
 from random import choice
@@ -31,18 +24,22 @@ clock = pygame.time.Clock()
 size = (700, 700)
 screen = pygame.display.set_mode(size)
 
-game_font = pygame.font.Font('04B_19.TTF',32)
-text = game_font.render("PLAYER 1: 0      Evil Computer: 0", True, (240, 87, 22))
-score_rect = text.get_rect(center = (350, 40))
-pygame.display.set_caption("Connect 4")
-running = True
+player_score = 0
+computer_score = 0
+
+
+def display_score():
+    game_font = pygame.font.Font('04B_19.TTF',32)
+    text = game_font.render("PLAYER 1: " + str(player_score) + "      Evil Computer: " + str(computer_score),
+                            True, (240, 87, 22))
+    score_rect = text.get_rect(center=(350, 40))
+    pygame.display.set_caption("Connect 4")
+    screen.blit(text, score_rect)
 
 
 # Define some colors
 BACKGROUND = (172, 204, 227)
 WHITE = (200, 200, 200)
-# YELLOW = (255, 242, 0)
-# RED = (189, 15, 15)
 ARROWBLUE = (65, 65, 107)
 
 # Define images
@@ -52,12 +49,14 @@ blue = pygame.image.load("C:\\Users\\alex_\\MyPythonScripts\\Connect4\\bluebar.p
 
 # Define global scope variables
 moves_dict = {} # will keep track of what moves were made
-for i in range(42):
-    moves_dict[i] = 0
+for _ in range(42):
+    moves_dict[_] = 0
+
 
 col1, col2, col3, col4, col5, col6, col7 = [], [], [], [], [], [], [] # will keep track of how the columns are filled
 move_count = 0
 computer_moves = [(col1, 1), (col2, 2), (col3, 3), (col4, 4), (col5, 5), (col6, 6), (col7, 7)]
+running = True
 
 
 # Define the functions used
@@ -95,15 +94,12 @@ def set_piece(x, col):
         # populate the moves_dict with key: value pairs such that key in range(0, 42) and values are tuples(x_coord,
         # y_coord, color)
         moves_dict[6*(col-1)+6-len(x)] = (x_coord, y_coord, color)
-        # f.write(moves_dict[6*(col-1)+6-len(x)] + '\n')
-        # for i in moves_dict:
-        #     print(i, moves_dict[i][0], moves_dict[i][1], moves_dict[i][2])
 
 
 def is_winner():
     """
     :return: True if win condition is found, else False
-    except covers IndexError and KeyError
+    except covers IndexError and TypeError (integer instead of tuple in dict.values())
     """
     # vertical win cases:
     for i in [0, 1, 2, 6, 7, 8, 12, 13, 14, 18, 19, 20,
@@ -151,11 +147,15 @@ def is_draw():
     return False
 
 
-def player_score():
+def score():
     """
-    Should display on top of the window text related to Player 1 and Player 2,
-    which turn it is, and the current score (games won)
+    Should display on top of the window text related to Player 1 and Player 2 the current score (games won)
     """
+    global player_score, computer_score
+    if move_count % 2:
+        player_score += 1
+    else:
+        computer_score += 1
 
 
 def comp_move():
@@ -238,10 +238,6 @@ def moves_layout():
     return display
 
 
-def quit_game():
-    pygame.quit()
-
-
 while True:
     f = open("log.txt", "a")
 
@@ -262,6 +258,7 @@ while True:
                 mouse_click(mouse)
                 f.write(moves_layout())
                 if is_winner():
+                    score()
                     f.write("Winner! \n")
                     running = False
 
@@ -269,6 +266,7 @@ while True:
             if comp_move():
                 f.write("Computer move: \n" + moves_layout())
             if is_winner():
+                score()
                 f.write("Winner! \n")
                 running = False
     # --- Drawing code should go here
@@ -288,9 +286,9 @@ while True:
             screen.blit(moves_dict[i][2], (moves_dict[i][0]-35, moves_dict[i][1]-35))
         except:
             continue
-    screen.blit(text, score_rect)
 
     # --- Update the screen
+    display_score()
     pygame.display.flip()
 
     # --- Limit to 60 frames per second
